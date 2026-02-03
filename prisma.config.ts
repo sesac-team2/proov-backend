@@ -12,3 +12,6 @@ export default defineConfig({
     url: process.env["DATABASE_URL"],
   },
 });
+
+import dotenv from 'dotenv';
+dotenv.config();
