@@ -25,7 +25,7 @@ COPY --from=builder /app/package.json ./
 COPY --from=builder /app/server ./server
 COPY --from=builder /app/prisma ./prisma
 
-EXPOSE 5000
+EXPOSE 5002
 
 # 경로를 server/app.js로 명시
 CMD ["node", "server/app.js"]

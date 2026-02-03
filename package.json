@@ -3,6 +3,7 @@
     "version": "1.0.0",
     "description": "",
     "main": "index.js",
+    "type": "module",
     "scripts": {
         "dev": "nodemon server/app.js",
         "test": "echo \"Error: no test specified\" && exit 1"
@@ -12,10 +13,13 @@
     "license": "ISC",
     "packageManager": "pnpm@10.28.0",
     "dependencies": {
-        "@prisma/client": "^7.3.0",
+        "@prisma/client": "^6.19.2",
+        "axios": "^1.13.4",
+        "bcryptjs": "^3.0.3",
         "dotenv": "^17.2.3",
         "express": "^5.2.1",
-        "prisma": "^7.3.0"
+        "jsonwebtoken": "^9.0.3",
+        "prisma": "^6.19.2"
     },
     "devDependencies": {
         "accessibility": "^6.1.0",
