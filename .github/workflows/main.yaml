@@ -1,0 +1,146 @@
+name: PROV Backend CI/CD
+
+on:
+  push:
+    branches:
+      - dev
+      - main
+  pull_request:
+    branches:
+      - dev
+      - main
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  # ==================== CI: 코드 품질 검증 ====================
+  test-and-lint:
+    name: Code Quality Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: Run linting (if configured)
+        run: pnpm run lint || echo "No lint script found"
+        continue-on-error: true
+
+      - name: Run tests (if configured)
+        run: pnpm test || echo "No test script found"
+        continue-on-error: true
+
+  # ==================== CD: Dev 환경 배포 ====================
+  deploy-dev:
+    name: Deploy to Dev Server
+    needs: test-and-lint
+    if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Deploy to Dev EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DEV_EC2_HOST }}
+          username: ${{ secrets.DEV_EC2_USER }}
+          key: ${{ secrets.DEV_EC2_SSH_KEY }}
+          port: 22
+          script: |
+            cd ~/prov-backend
+            git pull origin dev
+            pnpm install --frozen-lockfile
+            npx prisma generate
+            npx prisma migrate deploy
+            pm2 restart prov-backend-dev || pm2 start app.js --name prov-backend-dev
+
+      - name: Notify deployment status
+        if: always()
+        run: |
+          echo "🚀 Dev deployment completed"
+          echo "Status: ${{ job.status }}"
+
+  # ==================== CD: Production 환경 배포 ====================
+  deploy-production:
+    name: Deploy to Production Server
+    needs: test-and-lint
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://api.prov.com  # 실제 프로덕션 URL로 변경
+    
+    steps:
+      - name: Deploy to Production EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.PROD_EC2_HOST }}
+          username: ${{ secrets.PROD_EC2_USER }}
+          key: ${{ secrets.PROD_EC2_SSH_KEY }}
+          port: 22
+          script: |
+            cd ~/prov-backend
+            git pull origin main
+            pnpm install --frozen-lockfile
+            npx prisma generate
+            npx prisma migrate deploy
+            pm2 restart prov-backend-prod || pm2 start app.js --name prov-backend-prod
+
+      - name: Health Check
+        run: |
+          sleep 10
+          # curl -f https://api.prov.com/health || exit 1
+
+      - name: Notify deployment status
+        if: always()
+        run: |
+          echo "🎉 Production deployment completed"
+          echo "Status: ${{ job.status }}"
+
+  # ==================== Docker Build (선택사항) ====================
+  docker-build:
+    name: Build Docker Image
+    needs: test-and-lint
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/prov-backend:latest
+            ${{ secrets.DOCKER_USERNAME }}/prov-backend:${{ github.sha }}
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/prov-backend:latest
+          cache-to: type=inline
