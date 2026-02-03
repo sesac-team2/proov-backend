@@ -3,7 +3,7 @@ import express from "express";
 const app = express();
 
 app.get("/", (req, res) => {
-    res.send("CI/CD Test 배포 자동화 테스트 진짜 찐막");
+    res.send("CI/CD Test 배포 자동화 테스트 진짜 찐막 / docker 설치 완료..");
 });
 
 app.listen(5000, () => {
