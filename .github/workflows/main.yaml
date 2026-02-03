@@ -35,7 +35,7 @@ jobs:
         with:
           host: ${{ github.ref == 'refs/heads/main' && secrets.PROD_HOST || secrets.DEV_HOST }}
           username: ubuntu
-          key: ${{ secrets.EC2_SSH_KEY }}
+          key: ${{ secrets.DEV_SSH_KEY }}
           script: |
             # 1. 최신 이미지 받아오기
             docker pull ${{ secrets.DOCKER_USERNAME }}/proov-backend:latest
