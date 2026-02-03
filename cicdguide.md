@@ -1,8 +1,8 @@
-# 🚀 PROV Backend CI/CD 설정 가이드
+# 🚀 PROOV Backend CI/CD 설정 가이드
 
 ## 📋 개요
 
-이 문서는 PROV 백엔드의 GitHub Actions CI/CD 파이프라인 설정 방법을 안내합니다.
+이 문서는 PROOV 백엔드의 GitHub Actions CI/CD 파이프라인 설정 방법을 안내합니다.
 
 ## 🔧 필수 설정
 
@@ -36,14 +36,14 @@ DOCKER_PASSWORD    # Docker Hub 비밀번호 또는 Access Token
 
 ```bash
 # 1. SSH Key 생성 (비밀번호 없이)
-ssh-keygen -t rsa -b 4096 -C "prov-backend-deploy" -f ~/.ssh/prov-deploy
+ssh-keygen -t rsa -b 4096 -C "proov-backend-deploy" -f ~/.ssh/proov-deploy
 
 # 2. Public Key를 EC2 서버에 등록
-cat ~/.ssh/prov-deploy.pub >> ~/.ssh/authorized_keys
+cat ~/.ssh/proov-deploy.pub >> ~/.ssh/authorized_keys
 chmod 600 ~/.ssh/authorized_keys
 
 # 3. Private Key 내용 확인 (이것을 GitHub Secret에 등록)
-cat ~/.ssh/prov-deploy
+cat ~/.ssh/proov-deploy
 ```
 
 **중요:** Private Key 전체 내용(-----BEGIN ~ END----- 포함)을 복사하여 GitHub Secret에 등록하세요.
@@ -113,14 +113,14 @@ npm install -g pm2
 ```bash
 # Dev 서버
 cd ~
-git clone https://github.com/your-org/prov-backend.git
-cd prov-backend
+git clone https://github.com/your-org/proov-backend.git
+cd proov-backend
 git checkout dev
 
 # Production 서버
 cd ~
-git clone https://github.com/your-org/prov-backend.git
-cd prov-backend
+git clone https://github.com/your-org/proov-backend.git
+cd proov-backend
 git checkout main
 ```
 
@@ -128,12 +128,12 @@ git checkout main
 
 ```bash
 # .env 파일 생성
-nano ~/prov-backend/.env
+nano ~/proov-backend/.env
 ```
 
 ```.env
 # Database
-DATABASE_URL="postgresql://user:password@localhost:5432/prov_db"
+DATABASE_URL="postgresql://user:password@localhost:5432/proov_db"
 
 # Server
 PORT=5000
@@ -148,15 +148,15 @@ JWT_SECRET="your-secret-key"
 ### 4. 초기 배포 테스트
 
 ```bash
-cd ~/prov-backend
+cd ~/proov-backend
 pnpm install
 npx prisma generate
 npx prisma migrate deploy
 
 # PM2로 서버 시작
-pm2 start app.js --name prov-backend-dev  # Dev 서버
+pm2 start server/app.js --name proov-backend-dev  # Dev 서버
 # 또는
-pm2 start app.js --name prov-backend-prod  # Production 서버
+pm2 start server/app.js --name proov-backend-prod  # Production 서버
 
 # PM2 자동 시작 설정
 pm2 startup
@@ -176,17 +176,17 @@ pm2 save
 
 ```bash
 # SSH로 서버 접속
-ssh -i ~/.ssh/prov-deploy.pem ubuntu@your-ec2-ip
+ssh -i ~/.ssh/proov-deploy.pem ubuntu@your-ec2-ip
 
 # PM2 프로세스 상태 확인
 pm2 status
 
 # 로그 확인
-pm2 logs prov-backend-dev  # Dev
-pm2 logs prov-backend-prod  # Prod
+pm2 logs proov-backend-dev  # Dev
+pm2 logs proov-backend-prod  # Prod
 
 # 서버 재시작 (필요시)
-pm2 restart prov-backend-dev
+pm2 restart proov-backend-dev
 ```
 
 ---
@@ -213,10 +213,10 @@ Error: Migration failed
 ### 3. PM2 프로세스가 시작되지 않음
 ```bash
 # 로그 확인
-pm2 logs prov-backend-dev --lines 100
+pm2 logs proov-backend-dev --lines 100
 
 # 환경 변수 확인
-pm2 show prov-backend-dev
+pm2 show proov-backend-dev
 ```
 
 ---
