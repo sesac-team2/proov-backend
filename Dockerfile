@@ -1,5 +1,5 @@
 # 1. 빌드 스테이지
-FROM node:24-slim AS builder 
+FROM node:24 AS builder 
 
 # pnpm 및 필수 빌드 도구 설치 (slim 버전은 가벼워서 좋습니다)
 RUN npm install -g pnpm
@@ -15,7 +15,7 @@ COPY . .
 RUN npx prisma generate
 
 # 2. 실행 스테이지
-FROM node:24-slim AS production
+FROM node:24 AS production
 
 WORKDIR /app
 
