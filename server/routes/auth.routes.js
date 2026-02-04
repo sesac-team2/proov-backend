@@ -25,10 +25,6 @@ const router = express.Router();
  *                 enum: [google, kakao, github]
  *               token:
  *                 type: string
- *               full_name:
- *                 type: string
- *               avatar_url:
- *                 type: string
  *     responses:
  *       200:
  *         description: 로그인 성공

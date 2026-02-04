@@ -11,12 +11,12 @@ const options = {
         },
         servers: [
             {
-                url: "http://54.236.227.121.nip.io:5002",
-                description: "운영 서버",
-            },
-            {
                 url: "http://localhost:5002",
                 description: "Development server",
+            },
+            {
+                url: "http://54.236.227.121.nip.io:5002",
+                description: "운영 서버",
             },
         ],
         components: {

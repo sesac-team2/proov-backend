@@ -105,12 +105,15 @@ export const findOrCreateUser = async (
         where: { email },
     });
 
+    // 유저 이름이 null 이거나 undefined 이면 기본 닉네임 할당
+    const finalFullName = fullName || "proov_yourself";
+
     if (!user) {
         user = await prisma.users.create({
             data: {
                 email,
                 provider,
-                full_name: fullName,
+                full_name: finalFullName,
                 avatar_url: avatarUrl,
             },
         });

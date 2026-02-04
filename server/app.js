@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import authRoutes from "./routes/auth.routes.js";
 import { swaggerUi, specs } from "./config/swagger.js";
+import cors from "cors";
 
 dotenv.config();
 
@@ -9,6 +10,15 @@ const app = express();
 
 // Middleware
 app.use(express.json());
+
+// CORS 설정
+app.use(
+    cors({
+        origin: "*",
+        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allowedHeaders: ["Content-Type", "Authorization"],
+    }),
+);
 
 // Routes
 app.get("/", (req, res) => {
