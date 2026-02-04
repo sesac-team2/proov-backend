@@ -38,7 +38,7 @@ const verifyGoogleToken = async (token) => {
         `https://www.googleapis.com/oauth2/v3/userinfo`,
         {
             headers: { Authorization: `Bearer ${token}` },
-        }
+        },
     );
     return {
         email: response.data.email,
@@ -60,20 +60,47 @@ const verifyKakaoToken = async (token) => {
 };
 
 const verifyGithubToken = async (token) => {
-    const response = await axios.get("https://api.github.com/user", {
+    // 1. 기본 유저 정보 가져오기
+    const userResponse = await axios.get("https://api.github.com/user", {
         headers: { Authorization: `Bearer ${token}` },
     });
+
+    let email = userResponse.data.email;
+
+    // 2. 만약 기본 정보에 이메일이 null이라면 별도의 이메일 API 호출
+    if (!email) {
+        const emailResponse = await axios.get(
+            "https://api.github.com/user/emails",
+            {
+                headers: { Authorization: `Bearer ${token}` },
+            },
+        );
+
+        // 여러 이메일 중 primary이고 verified된 것을 찾음
+        const primaryEmailObj = emailResponse.data.find(
+            (e) => e.primary && e.verified,
+        );
+        email = primaryEmailObj
+            ? primaryEmailObj.email
+            : emailResponse.data[0]?.email;
+    }
+
     return {
-        email: response.data.email,
-        full_name: response.data.name || response.data.login,
-        avatar_url: response.data.avatar_url,
+        email: email, // 이제 null이 아님!
+        full_name: userResponse.data.name || userResponse.data.login,
+        avatar_url: userResponse.data.avatar_url,
     };
 };
 
 /**
  * 유저 조회 또는 생성
  */
-export const findOrCreateUser = async (email, provider, fullName, avatarUrl) => {
+export const findOrCreateUser = async (
+    email,
+    provider,
+    fullName,
+    avatarUrl,
+) => {
     let user = await prisma.users.findUnique({
         where: { email },
     });
