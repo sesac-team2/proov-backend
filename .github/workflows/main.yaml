@@ -1,4 +1,4 @@
-name: PROOV Backend CD (Docker)
+name: PROOV Backend CI/CD (Docker)
 
 on:
     push:

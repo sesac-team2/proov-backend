@@ -38,7 +38,7 @@ export const login = async (req, res) => {
             userInfo.email,
             provider,
             full_name || userInfo.full_name,
-            avatar_url || userInfo.avatar_url
+            avatar_url || userInfo.avatar_url,
         );
 
         // JWT 생성
@@ -70,7 +70,9 @@ export const getMe = async (req, res) => {
         const user = await authService.findUserById(req.user.id);
 
         if (!user) {
-            return res.status(401).json({ error: "Unauthorized: User not found" });
+            return res
+                .status(401)
+                .json({ error: "Unauthorized: User not found" });
         }
 
         return res.status(200).json({
@@ -110,7 +112,10 @@ export const updateMe = async (req, res) => {
         if (avatar_url !== undefined) updateData.avatar_url = avatar_url;
         if (bio !== undefined) updateData.bio = bio;
 
-        const user = await authService.updateUserProfile(req.user.id, updateData);
+        const user = await authService.updateUserProfile(
+            req.user.id,
+            updateData,
+        );
 
         return res.status(200).json({
             id: user.id,
@@ -123,5 +128,23 @@ export const updateMe = async (req, res) => {
     } catch (error) {
         console.error("UpdateMe error:", error);
         return res.status(500).json({ error: "Internal Server Error" });
+    }
+};
+
+/**
+ * DELETE /auth/me
+ * 유저 탈퇴
+ */
+export const withdraw = async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        // 그냥 유저만 삭제하면 끝!
+        await authService.deleteUser(userId);
+
+        return res.status(200).json({ message: "성공적으로 탈퇴되었습니다." });
+    } catch (error) {
+        console.error("Withdraw error:", error);
+        return res.status(500).json({ error: "서버 에러가 발생했습니다." });
     }
 };

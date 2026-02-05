@@ -157,3 +157,13 @@ export const updateUserProfile = async (id, data) => {
         data,
     });
 };
+
+/**
+ * 유저 삭제 (탈퇴)
+ * onDelete: SetNull 설정으로 연결된 프로젝트의 userId가 자동으로 NULL로 변경됨
+ */
+export const deleteUser = async (id) => {
+    return await prisma.users.delete({
+        where: { id },
+    });
+};
