@@ -32,6 +32,9 @@ importers:
       prisma:
         specifier: ^6.19.2
         version: 6.19.2
+      qs:
+        specifier: ^6.14.1
+        version: 6.14.1
       swagger-jsdoc:
         specifier: ^6.2.8
         version: 6.2.8(openapi-types@12.1.3)

@@ -1,10 +1,79 @@
 import jwt from "jsonwebtoken";
 import axios from "axios";
+import qs from "qs";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 const JWT_EXPIRES_IN = 3600; // 1 hour
+
+/**
+ * 카카오 Authorization Code -> Access Token 교환
+ * @param {string} code - Authorization Code
+ * @param {string} redirect_uri - 프론트에서 사용한 redirect_uri
+ */
+export const exchangeKakaoCode = async (code, redirect_uri) => {
+    try {
+        const response = await axios.post(
+            "https://kauth.kakao.com/oauth/token",
+            qs.stringify({
+                grant_type: "authorization_code",
+                client_id: process.env.KAKAO_CLIENT_ID,
+                redirect_uri: redirect_uri,
+                code: code,
+            }),
+            {
+                headers: {
+                    "Content-Type":
+                        "application/x-www-form-urlencoded;charset=utf-8",
+                },
+            },
+        );
+        return response.data.access_token;
+    } catch (error) {
+        console.error(
+            "카카오 토큰 교환 실패:",
+            error.response?.data || error.message,
+        );
+        throw new Error("카카오 로그인 실패");
+    }
+};
+
+/**
+ * 깃허브 Authorization Code -> Access Token 교환
+ * @param {string} code - Authorization Code
+ * @param {string} redirect_uri - 프론트에서 사용한 redirect_uri
+ */
+export const exchangeGithubCode = async (code, redirect_uri) => {
+    try {
+        const response = await axios.post(
+            "https://github.com/login/oauth/access_token",
+            {
+                client_id: process.env.GITHUB_CLIENT_ID,
+                client_secret: process.env.GITHUB_CLIENT_SECRET,
+                code: code,
+                redirect_uri: redirect_uri,
+            },
+            {
+                headers: {
+                    Accept: "application/json",
+                },
+            },
+        );
+
+        if (response.data.error) {
+            throw new Error(response.data.error_description);
+        }
+
+        return response.data.access_token;
+    } catch (error) {
+        console.error(
+            "깃허브 토큰 교환 실패:",
+            error.response?.data || error.message,
+        );
+        throw new Error("깃허브 로그인 실패");
+    }
+};
 
 /**
  * OAuth provider별 토큰 검증
