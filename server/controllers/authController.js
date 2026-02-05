@@ -3,33 +3,67 @@ import * as authService from "../services/authService.js";
 /**
  * POST /auth/login
  * OAuth 로그인/회원가입
+ * - Google: token (Access Token)을 직접 받음
+ * - Kakao, GitHub: code (Authorization Code)를 받아서 토큰 교환 후 처리
  */
 export const login = async (req, res) => {
     try {
-        const { provider, token, full_name, avatar_url } = req.body;
-
-        // 필수 필드 검증
-        if (!provider || !token) {
-            return res.status(400).json({
-                error: "Bad Request: provider and token are required",
-            });
-        }
+        const { provider, token, code, redirect_uri, full_name, avatar_url } =
+            req.body;
 
         // 유효한 provider 검증
         const validProviders = ["google", "kakao", "github"];
-        if (!validProviders.includes(provider)) {
+        if (!provider || !validProviders.includes(provider)) {
             return res.status(400).json({
-                error: "Bad Request: Invalid provider",
+                error: "Bad Request: Invalid or missing provider",
             });
         }
 
-        // OAuth 토큰 검증
+        let accessToken;
+
+        // Provider별 처리
+        if (provider === "google") {
+            // Google은 프론트에서 이미 token을 받아옴
+            if (!token) {
+                return res.status(400).json({
+                    error: "Bad Request: token is required for Google login",
+                });
+            }
+            accessToken = token;
+        } else if (provider === "kakao") {
+            // Kakao는 code + redirect_uri -> token 교환 필요
+            if (!code || !redirect_uri) {
+                return res.status(400).json({
+                    error: "Bad Request: code and redirect_uri are required for Kakao login",
+                });
+            }
+            accessToken = await authService.exchangeKakaoCode(
+                code,
+                redirect_uri,
+            );
+        } else if (provider === "github") {
+            // GitHub는 code + redirect_uri -> token 교환 필요
+            if (!code || !redirect_uri) {
+                return res.status(400).json({
+                    error: "Bad Request: code and redirect_uri are required for GitHub login",
+                });
+            }
+            accessToken = await authService.exchangeGithubCode(
+                code,
+                redirect_uri,
+            );
+        }
+
+        // OAuth 토큰으로 유저 정보 가져오기
         let userInfo;
         try {
-            userInfo = await authService.verifyOAuthToken(provider, token);
+            userInfo = await authService.verifyOAuthToken(
+                provider,
+                accessToken,
+            );
         } catch (error) {
             return res.status(401).json({
-                error: "Unauthorized: Invalid OAuth token",
+                error: "Unauthorized: Failed to get user info from OAuth provider",
             });
         }
 
