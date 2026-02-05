@@ -81,4 +81,22 @@ router.get("/me", authenticate, authController.getMe);
  */
 router.put("/me", authenticate, authController.updateMe);
 
+/**
+ * @swagger
+ * /auth/me:
+ *   delete:
+ *     summary: 유저 탈퇴
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: 탈퇴 성공
+ *       401:
+ *         description: 인증 실패
+ *       500:
+ *         description: 서버 에러
+ */
+router.delete("/me", authenticate, authController.withdraw);
+
 export default router;

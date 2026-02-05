@@ -5,21 +5,36 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
+    provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
 }
 
 model Users {
-  id         String   @id @default(uuid())
-  email      String   @unique
-  full_name  String?
-  avatar_url String?
-  bio        String?
-  provider   String   // google | kakao | github
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+    id         String    @id @default(uuid())
+    email      String    @unique
+    full_name  String?
+    avatar_url String?
+    bio        String?
+    provider   String    // google | kakao | github
+    created_at DateTime  @default(now())
+    updated_at DateTime  @updatedAt
+    projects   Project[] // 유저가 작성한 프로젝트들
+}
+
+model Project {
+    id          Int      @id @default(autoincrement())
+    title       String
+    description String?
+    created_at  DateTime @default(now())
+    updated_at  DateTime @updatedAt
+
+    // [중요 1] userId에 '?'를 붙여서 "없을 수도 있다(Nullable)"고 선언
+    userId      String?
+
+    // [중요 2] onDelete: SetNull -> 유저가 삭제되면 이 칸을 NULL로 비워둠
+    user        Users?   @relation(fields: [userId], references: [id], onDelete: SetNull)
 }
