@@ -25,6 +25,10 @@ app.get("/", (req, res) => {
     res.send("PROOV Backend Server is running!");
 });
 
+app.get("/projects", (req, res) => {
+    res.send("프로젝트 테스트 중...");
+});
+
 app.use("/auth", authRoutes);
 
 // Swagger Documentation
