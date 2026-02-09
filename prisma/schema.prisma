@@ -14,15 +14,16 @@ datasource db {
 }
 
 model Users {
-    id         String    @id @default(uuid())
-    email      String    @unique
-    full_name  String?
-    avatar_url String?
-    bio        String?
-    provider   String    // google | kakao | github
-    created_at DateTime  @default(now())
-    updated_at DateTime  @updatedAt
-    projects   Project[] // 유저가 작성한 프로젝트들
+    id            String         @id @default(uuid())
+    email         String         @unique
+    full_name     String?
+    avatar_url    String?
+    bio           String?
+    provider      String         // google | kakao | github
+    created_at    DateTime       @default(now())
+    updated_at    DateTime       @updatedAt
+    projects      Project[]      // 유저가 작성한 프로젝트들
+    refreshTokens RefreshToken[] // 유저의 리프레시 토큰들
 }
 
 model Project {
@@ -33,8 +34,17 @@ model Project {
     updated_at  DateTime @updatedAt
 
     // [중요 1] userId에 '?'를 붙여서 "없을 수도 있다(Nullable)"고 선언
-    userId      String?
+    userId String?
 
     // [중요 2] onDelete: SetNull -> 유저가 삭제되면 이 칸을 NULL로 비워둠
-    user        Users?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+    user Users? @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+model RefreshToken {
+    id         String   @id @default(uuid())
+    token      String   @unique
+    userId     String
+    user       Users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+    expires_at DateTime
+    created_at DateTime @default(now())
 }

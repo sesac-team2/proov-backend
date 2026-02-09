@@ -5,7 +5,10 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
-const JWT_EXPIRES_IN = 3600; // 1 hour
+const JWT_REFRESH_SECRET =
+    process.env.JWT_REFRESH_SECRET || "your-refresh-secret-key";
+const ACCESS_TOKEN_EXPIRES_IN = 900; // 15분
+const REFRESH_TOKEN_EXPIRES_IN = 604800; // 7일
 
 /**
  * 카카오 Authorization Code -> Access Token 교환
@@ -192,20 +195,112 @@ export const findOrCreateUser = async (
 };
 
 /**
- * JWT 토큰 생성
+ * Access Token 생성 (15분)
  */
-export const generateJWT = (user) => {
+export const generateAccessToken = (user) => {
     const payload = {
         id: user.id,
         email: user.email,
     };
 
-    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+    const token = jwt.sign(payload, JWT_SECRET, {
+        expiresIn: ACCESS_TOKEN_EXPIRES_IN,
+    });
 
     return {
         token,
-        expires_in: JWT_EXPIRES_IN,
+        expires_in: ACCESS_TOKEN_EXPIRES_IN,
     };
+};
+
+/**
+ * Refresh Token 생성 및 DB 저장 (7일)
+ */
+export const generateRefreshToken = async (user) => {
+    const payload = {
+        id: user.id,
+        type: "refresh",
+    };
+
+    const token = jwt.sign(payload, JWT_REFRESH_SECRET, {
+        expiresIn: REFRESH_TOKEN_EXPIRES_IN,
+    });
+
+    const expiresAt = new Date(Date.now() + REFRESH_TOKEN_EXPIRES_IN * 1000);
+
+    // DB에 저장
+    await prisma.refreshToken.create({
+        data: {
+            token,
+            userId: user.id,
+            expires_at: expiresAt,
+        },
+    });
+
+    return {
+        token,
+        expires_in: REFRESH_TOKEN_EXPIRES_IN,
+    };
+};
+
+/**
+ * Refresh Token 검증 (DB에서 확인)
+ */
+export const verifyRefreshToken = async (token) => {
+    try {
+        // JWT 검증
+        const decoded = jwt.verify(token, JWT_REFRESH_SECRET);
+
+        // DB에서 토큰 찾기
+        const storedToken = await prisma.refreshToken.findUnique({
+            where: { token },
+            include: { user: true },
+        });
+
+        if (!storedToken) {
+            throw new Error("Token not found in database");
+        }
+
+        // 만료 확인
+        if (new Date() > storedToken.expires_at) {
+            await prisma.refreshToken.delete({ where: { token } });
+            throw new Error("Token expired");
+        }
+
+        return storedToken.user;
+    } catch (error) {
+        throw new Error("Invalid refresh token");
+    }
+};
+
+/**
+ * Refresh Token 삭제 (로그아웃, 토큰 갱신 시)
+ */
+export const deleteRefreshToken = async (token) => {
+    try {
+        await prisma.refreshToken.delete({
+            where: { token },
+        });
+    } catch (error) {
+        // 이미 삭제된 토큰이면 무시
+    }
+};
+
+/**
+ * 유저의 모든 Refresh Token 삭제 (모든 기기에서 로그아웃)
+ */
+export const deleteUserRefreshTokens = async (userId) => {
+    await prisma.refreshToken.deleteMany({
+        where: { userId },
+    });
+};
+
+/**
+ * JWT 토큰 생성 (하위 호환성 유지 - deprecated)
+ * @deprecated generateAccessToken과 generateRefreshToken 사용 권장
+ */
+export const generateJWT = (user) => {
+    return generateAccessToken(user);
 };
 
 /**
