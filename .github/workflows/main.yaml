@@ -2,7 +2,7 @@ name: PROOV Backend CI/CD (Docker)
 
 on:
     push:
-        branches: ["dev", "main"]
+        branches: ["dev"] # 현재 main 브렌치 말고 dev 브렌치에 push 시에만 실행
 
 jobs:
     build-and-push:
