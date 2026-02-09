@@ -16,7 +16,7 @@ const COOKIE_OPTIONS = {
  */
 export const login = async (req, res) => {
     try {
-        const { provider, token, code, redirect_uri, full_name, avatar_url } =
+        const { provider, token, code, redirectUri, fullName, avatarUrl } =
             req.body;
 
         // 유효한 provider 검증
@@ -40,25 +40,25 @@ export const login = async (req, res) => {
             accessToken = token;
         } else if (provider === "kakao") {
             // Kakao는 code + redirect_uri -> token 교환 필요
-            if (!code || !redirect_uri) {
+            if (!code || !redirectUri) {
                 return res.status(400).json({
-                    error: "Bad Request: code and redirect_uri are required for Kakao login",
+                    error: "Bad Request: code and redirectUri are required for Kakao login",
                 });
             }
             accessToken = await authService.exchangeKakaoCode(
                 code,
-                redirect_uri,
+                redirectUri,
             );
         } else if (provider === "github") {
             // GitHub는 code + redirect_uri -> token 교환 필요
-            if (!code || !redirect_uri) {
+            if (!code || !redirectUri) {
                 return res.status(400).json({
-                    error: "Bad Request: code and redirect_uri are required for GitHub login",
+                    error: "Bad Request: code and redirectUri are required for GitHub login",
                 });
             }
             accessToken = await authService.exchangeGithubCode(
                 code,
-                redirect_uri,
+                redirectUri,
             );
         }
 
@@ -79,8 +79,8 @@ export const login = async (req, res) => {
         const user = await authService.findOrCreateUser(
             userInfo.email,
             provider,
-            full_name || userInfo.full_name,
-            avatar_url || userInfo.avatar_url,
+            fullName || userInfo.fullName,
+            avatarUrl || userInfo.avatarUrl,
         );
 
         // Access Token 생성
@@ -93,14 +93,14 @@ export const login = async (req, res) => {
         res.cookie("refresh_token", refreshTokenData.token, COOKIE_OPTIONS);
 
         return res.status(200).json({
-            access_token: accessTokenData.token,
-            expires_in: accessTokenData.expires_in,
+            accessToken: accessTokenData.token,
+            expiresIn: accessTokenData.expiresIn,
             user: {
                 id: user.id,
                 email: user.email,
-                full_name: user.full_name,
-                avatar_url: user.avatar_url,
-                created_at: user.created_at,
+                fullName: user.fullName,
+                avatarUrl: user.avatarUrl,
+                createdAt: user.createdAt,
             },
         });
     } catch (error) {
@@ -149,8 +149,8 @@ export const refresh = async (req, res) => {
         res.cookie("refresh_token", newRefreshTokenData.token, COOKIE_OPTIONS);
 
         return res.status(200).json({
-            access_token: accessTokenData.token,
-            expires_in: accessTokenData.expires_in,
+            accessToken: accessTokenData.token,
+            expiresIn: accessTokenData.expiresIn,
         });
     } catch (error) {
         console.error("Refresh error:", error);
@@ -198,9 +198,9 @@ export const getMe = async (req, res) => {
         return res.status(200).json({
             id: user.id,
             email: user.email,
-            full_name: user.full_name,
-            avatar_url: user.avatar_url,
-            created_at: user.created_at,
+            fullName: user.fullName,
+            avatarUrl: user.avatarUrl,
+            createdAt: user.createdAt,
         });
     } catch (error) {
         console.error("GetMe error:", error);
@@ -214,22 +214,22 @@ export const getMe = async (req, res) => {
  */
 export const updateMe = async (req, res) => {
     try {
-        const { full_name, avatar_url, bio } = req.body;
+        const { fullName, avatarUrl, bio } = req.body;
 
-        // URL 형식 검증 (avatar_url이 있는 경우)
-        if (avatar_url) {
+        // URL 형식 검증 (avatarUrl이 있는 경우)
+        if (avatarUrl) {
             try {
-                new URL(avatar_url);
+                new URL(avatarUrl);
             } catch {
                 return res.status(400).json({
-                    error: "Bad Request: Invalid avatar_url format",
+                    error: "Bad Request: Invalid avatarUrl format",
                 });
             }
         }
 
         const updateData = {};
-        if (full_name !== undefined) updateData.full_name = full_name;
-        if (avatar_url !== undefined) updateData.avatar_url = avatar_url;
+        if (fullName !== undefined) updateData.full_name = fullName;
+        if (avatarUrl !== undefined) updateData.avatar_url = avatarUrl;
         if (bio !== undefined) updateData.bio = bio;
 
         const user = await authService.updateUserProfile(
@@ -240,10 +240,10 @@ export const updateMe = async (req, res) => {
         return res.status(200).json({
             id: user.id,
             email: user.email,
-            full_name: user.full_name,
-            avatar_url: user.avatar_url,
+            fullName: user.fullName,
+            avatarUrl: user.avatarUrl,
             bio: user.bio,
-            updated_at: user.updated_at,
+            updatedAt: user.updatedAt,
         });
     } catch (error) {
         console.error("UpdateMe error:", error);
