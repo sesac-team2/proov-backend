@@ -151,6 +151,24 @@ router.post("/logout", authController.logout);
  *     responses:
  *       200:
  *         description: 유저 정보 반환
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                 email:
+ *                   type: string
+ *                 fullName:
+ *                   type: string
+ *                 avatarUrl:
+ *                   type: string
+ *                 bio:
+ *                   type: string
+ *                 createdAt:
+ *                   type: string
+ *                   format: date-time
  *       401:
  *         description: 인증 실패
  */

@@ -200,6 +200,7 @@ export const getMe = async (req, res) => {
             email: user.email,
             fullName: user.fullName,
             avatarUrl: user.avatarUrl,
+            bio: user.bio,
             createdAt: user.createdAt,
         });
     } catch (error) {
@@ -228,8 +229,8 @@ export const updateMe = async (req, res) => {
         }
 
         const updateData = {};
-        if (fullName !== undefined) updateData.full_name = fullName;
-        if (avatarUrl !== undefined) updateData.avatar_url = avatarUrl;
+        if (fullName !== undefined) updateData.fullName = fullName;
+        if (avatarUrl !== undefined) updateData.avatarUrl = avatarUrl;
         if (bio !== undefined) updateData.bio = bio;
 
         const user = await authService.updateUserProfile(

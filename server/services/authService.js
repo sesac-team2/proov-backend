@@ -13,16 +13,16 @@ const REFRESH_TOKEN_EXPIRES_IN = 604800; // 7일
 /**
  * 카카오 Authorization Code -> Access Token 교환
  * @param {string} code - Authorization Code
- * @param {string} redirect_uri - 프론트에서 사용한 redirect_uri
+ * @param {string} redirectUri - 프론트에서 사용한 redirectUri
  */
-export const exchangeKakaoCode = async (code, redirect_uri) => {
+export const exchangeKakaoCode = async (code, redirectUri) => {
     try {
         const response = await axios.post(
             "https://kauth.kakao.com/oauth/token",
             qs.stringify({
                 grant_type: "authorization_code",
                 client_id: process.env.KAKAO_CLIENT_ID,
-                redirect_uri: redirect_uri,
+                redirect_uri: redirectUri,
                 code: code,
             }),
             {
@@ -45,9 +45,9 @@ export const exchangeKakaoCode = async (code, redirect_uri) => {
 /**
  * 깃허브 Authorization Code -> Access Token 교환
  * @param {string} code - Authorization Code
- * @param {string} redirect_uri - 프론트에서 사용한 redirect_uri
+ * @param {string} redirectUri - 프론트에서 사용한 redirectUri
  */
-export const exchangeGithubCode = async (code, redirect_uri) => {
+export const exchangeGithubCode = async (code, redirectUri) => {
     try {
         const response = await axios.post(
             "https://github.com/login/oauth/access_token",
@@ -55,7 +55,7 @@ export const exchangeGithubCode = async (code, redirect_uri) => {
                 client_id: process.env.GITHUB_CLIENT_ID,
                 client_secret: process.env.GITHUB_CLIENT_SECRET,
                 code: code,
-                redirect_uri: redirect_uri,
+                redirect_uri: redirectUri,
             },
             {
                 headers: {
@@ -185,8 +185,8 @@ export const findOrCreateUser = async (
             data: {
                 email,
                 provider,
-                full_name: finalFullName,
-                avatar_url: avatarUrl,
+                fullName: finalFullName,
+                avatarUrl: avatarUrl,
             },
         });
     }
@@ -233,7 +233,7 @@ export const generateRefreshToken = async (user) => {
         data: {
             token,
             userId: user.id,
-            expires_at: expiresAt,
+            expiresAt: expiresAt,
         },
     });
 
@@ -262,7 +262,7 @@ export const verifyRefreshToken = async (token) => {
         }
 
         // 만료 확인
-        if (new Date() > storedToken.expires_at) {
+        if (new Date() > storedToken.expiresAt) {
             await prisma.refreshToken.delete({ where: { token } });
             throw new Error("Token expired");
         }

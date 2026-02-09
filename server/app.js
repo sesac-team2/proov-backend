@@ -1,7 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
-import authRoutes from "./routes/auth.routes.js";
+import authRoute from "./routes/authRoute.js";
 import { swaggerUi, specs } from "./config/swagger.js";
 import cors from "cors";
 
@@ -28,7 +28,7 @@ app.get("/", (req, res) => {
     res.send("PROOV Backend Server is running!");
 });
 
-app.use("/auth", authRoutes);
+app.use("/auth", authRoute);
 
 // Swagger Documentation
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
