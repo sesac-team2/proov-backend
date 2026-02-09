@@ -30,6 +30,10 @@ app.get("/", (req, res) => {
 
 app.use("/auth", authRoute);
 
+app.get("/projects", (req, res) => {
+    res.send("프로젝트 테스트 중...");
+});
+
 // Swagger Documentation
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 
