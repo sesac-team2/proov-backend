@@ -114,8 +114,8 @@ const verifyGoogleToken = async (token) => {
     );
     return {
         email: response.data.email,
-        full_name: response.data.name,
-        avatar_url: response.data.picture,
+        fullName: response.data.name,
+        avatarUrl: response.data.picture,
     };
 };
 
@@ -126,8 +126,8 @@ const verifyKakaoToken = async (token) => {
     const { kakao_account, properties } = response.data;
     return {
         email: kakao_account?.email,
-        full_name: properties?.nickname,
-        avatar_url: properties?.profile_image,
+        fullName: properties?.nickname,
+        avatarUrl: properties?.profile_image,
     };
 };
 
@@ -159,8 +159,8 @@ const verifyGithubToken = async (token) => {
 
     return {
         email: email, // 이제 null이 아님!
-        full_name: userResponse.data.name || userResponse.data.login,
-        avatar_url: userResponse.data.avatar_url,
+        fullName: userResponse.data.name || userResponse.data.login,
+        avatarUrl: userResponse.data.avatar_url,
     };
 };
 
@@ -209,7 +209,7 @@ export const generateAccessToken = (user) => {
 
     return {
         token,
-        expires_in: ACCESS_TOKEN_EXPIRES_IN,
+        expiresIn: ACCESS_TOKEN_EXPIRES_IN,
     };
 };
 
@@ -239,7 +239,7 @@ export const generateRefreshToken = async (user) => {
 
     return {
         token,
-        expires_in: REFRESH_TOKEN_EXPIRES_IN,
+        expiresIn: REFRESH_TOKEN_EXPIRES_IN,
     };
 };
 
