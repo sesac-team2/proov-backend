@@ -15,7 +15,7 @@ const router = express.Router();
  *       - **Kakao**: `code` + `redirectUri` (Authorization Code와 리다이렉트 URI 전달)
  *       - **GitHub**: `code` + `redirectUri` (Authorization Code와 리다이렉트 URI 전달)
  *
- *       성공 시 `accessToken`은 응답 body로, `refreshToken`은 HttpOnly 쿠키로 설정됩니다.
+ *       성공 시 `accessToken`과 `refreshToken`이 모두 응답 body로 반환됩니다.
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -59,12 +59,7 @@ const router = express.Router();
  *                 redirectUri: "http://localhost:3000/auth/github/callback"
  *     responses:
  *       200:
- *         description: 로그인 성공 (refreshToken은 HttpOnly 쿠키로 설정)
- *         headers:
- *           Set-Cookie:
- *             description: refreshToken HttpOnly 쿠키
- *             schema:
- *               type: string
+ *         description: 로그인 성공
  *         content:
  *           application/json:
  *             schema:
@@ -73,6 +68,9 @@ const router = express.Router();
  *                 accessToken:
  *                   type: string
  *                   description: JWT Access Token (15분)
+ *                 refreshToken:
+ *                   type: string
+ *                   description: JWT Refresh Token (7일)
  *                 expiresIn:
  *                   type: integer
  *                   description: Access Token 만료 시간 (초)
@@ -100,17 +98,24 @@ router.post("/login", authController.login);
  *   post:
  *     summary: Access Token 재발급
  *     description: |
- *       HttpOnly 쿠키의 refreshToken을 사용하여 새 accessToken을 발급합니다.
+ *       refreshToken을 사용하여 새 accessToken을 발급합니다.
  *       Token Rotation이 적용되어 refreshToken도 함께 갱신됩니다.
  *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - refreshToken
+ *             properties:
+ *               refreshToken:
+ *                 type: string
+ *                 description: 기존에 발급받은 Refresh Token
  *     responses:
  *       200:
  *         description: 토큰 재발급 성공
- *         headers:
- *           Set-Cookie:
- *             description: 새 refreshToken HttpOnly 쿠키
- *             schema:
- *               type: string
  *         content:
  *           application/json:
  *             schema:
@@ -119,6 +124,9 @@ router.post("/login", authController.login);
  *                 accessToken:
  *                   type: string
  *                   description: 새 JWT Access Token (15분)
+ *                 refreshToken:
+ *                   type: string
+ *                   description: 새 JWT Refresh Token (7일)
  *                 expiresIn:
  *                   type: integer
  *                   description: Access Token 만료 시간 (초)
@@ -132,8 +140,17 @@ router.post("/refresh", authController.refresh);
  * /auth/logout:
  *   post:
  *     summary: 로그아웃
- *     description: refreshToken 쿠키를 삭제하고 DB에서도 토큰을 제거합니다.
+ *     description: DB에서 refreshToken을 제거합니다.
  *     tags: [Auth]
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               refreshToken:
+ *                 type: string
+ *                 description: 삭제할 Refresh Token
  *     responses:
  *       200:
  *         description: 로그아웃 성공
@@ -209,7 +226,7 @@ router.put("/me", authenticate, authController.updateMe);
  * /auth/me:
  *   delete:
  *     summary: 유저 탈퇴
- *     description: 유저 삭제 및 refreshToken 쿠키 제거
+ *     description: 유저 삭제 (Cascade로 refreshToken도 함께 삭제)
  *     tags: [Auth]
  *     security:
  *       - bearerAuth: []
