@@ -10,6 +10,22 @@ dotenv.config();
 
 const app = express();
 
+// 📋 요청 로깅 미들웨어 (최상단)
+app.use((req, res, next) => {
+    const start = Date.now();
+    const origin = req.headers.origin || "N/A";
+    console.log(`➡️  ${req.method} ${req.url} | Origin: ${origin}`);
+
+    res.on("finish", () => {
+        const duration = Date.now() - start;
+        console.log(
+            `⬅️  ${req.method} ${req.url} | Status: ${res.statusCode} | ${duration}ms`,
+        );
+    });
+
+    next();
+});
+
 // Middleware
 app.use(express.json());
 app.use(cookieParser());
