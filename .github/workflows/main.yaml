@@ -51,6 +51,7 @@ jobs:
                         -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
                         -e JWT_SECRET="${{ secrets.JWT_SECRET }}" \
                         -e JWT_REFRESH_SECRET="${{ secrets.JWT_REFRESH_SECRET }}" \
+                        -e FRONTEND_URL="${{ secrets.FRONTEND_URL }}" \
                         -e GOOGLE_CLIENT_ID="${{ secrets.GOOGLE_CLIENT_ID }}" \
                         -e GOOGLE_CLIENT_SECRET="${{ secrets.GOOGLE_CLIENT_SECRET }}" \
                         -e KAKAO_CLIENT_ID="${{ secrets.KAKAO_CLIENT_ID }}" \
