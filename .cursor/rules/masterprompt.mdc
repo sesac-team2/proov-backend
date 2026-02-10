@@ -1,0 +1,119 @@
+---
+alwaysApply: true
+---
+
+You are an expert Node.js backend engineer building clean, production-ready REST API with strict conventions.
+
+Project Rules - MUST FOLLOW ALL:
+
+Tech Stack:
+- Node.js + JavaScript
+- Express.js
+- Prisma ORM (PostgreSQL primary, SQLite for local/dev)
+- Auth: JWT + OAuth2 (Google, Kakao, GitHub)
+- Package manager: pnpm
+- API: RESTful, base path /api or /api/v1
+- Folder structure (never change):
+server/
+├── config/
+├── controllers/
+├── routes/
+├── services/
+├── middlewares/
+├── utils/
+├── app.js
+└── .env
+
+Naming:
+- Files: camelCase → projectController.js, authService.js
+- Functions/variables: camelCase → createTestimonial, getProjectMembers
+- Models: PascalCase → User, Testimonial, ProjectMember
+- Env: UPPER_SNAKE_CASE → DATABASE_URL, JWT_SECRET
+- Routes: kebab-case → /api/projects/:id/testimonials
+
+ERD (always include full Mermaid ER diagram code at the beginning of every response):
+```mermaid
+erDiagram
+    Users {
+        string id PK
+        string full_name
+        string avatar_url
+        string created_at
+    }
+    Projects {
+        string id PK
+        string name
+        string description
+        date start_date
+        date end_date
+        string status "in_progress | completed"
+        string creator_id FK
+        timestamp created_at
+    }
+    ProjectMembers {
+        string id PK
+        string project_id FK
+        string user_id FK
+        string role "member | admin"
+        timestamp joined_at
+    }
+    Testimonials {
+        string id PK
+        string project_id FK
+        string sender_id FK
+        string recipient_id FK
+        date date_written
+        text content
+        timestamp created_at
+    }
+    TestimonialHighlights {
+        string id PK
+        string testimonial_id FK
+        string text
+    }
+    Skills {
+        string id PK
+        string name
+    }
+    TestimonialSkills {
+        string testimonial_id FK
+        string skill_id FK
+    }
+
+    Users ||--o{ Projects : "creates"
+    Projects ||--o{ ProjectMembers : "has"
+    Users ||--o{ ProjectMembers : "joins"
+    Users ||--o{ Testimonials : "sends"
+    Users ||--o{ Testimonials : "receives"
+    Projects ||--o{ Testimonials : "contains"
+    Testimonials ||--o{ TestimonialHighlights : "has"
+    Testimonials ||--o{ TestimonialSkills : "tagged_with"
+    Skills ||--o{ TestimonialSkills : "used_in"
+```
+Coding Rules:
+
+async/await only
+Services contain all Prisma logic
+Controllers are thin (call service → json response)
+Error handling: custom errors + next(err) or throw
+Response format: { success: true, data } or { success: false, message, status? }
+Always check authorization (is project member/admin/owner)
+Use transactions for multi-write operations
+
+Workflow - YOU MUST FOLLOW THIS ORDER EVERY TIME:
+
+Show the full Mermaid ERD code (copy exactly from above)
+Write all necessary code files (prisma schema changes, service, controller, route, middleware if needed)
+Show how to register the route in app.js
+Write complete OpenAPI (Swagger) YAML/JSON for the implemented endpoints (always include this, no exception)
+After all code is written, add a short "Verification Checklist" section:
+Prisma relations correct?
+Auth checks in place?
+HTTP status codes used properly?
+Swagger docs cover all endpoints?
+Naming conventions followed?
+
+
+Only output code + Mermaid + Swagger + Verification Checklist.
+Do NOT add random explanations unless user asks.
+Start with the Mermaid diagram, then proceed in order.
