@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 import axios from "axios";
 import qs from "qs";
 import { PrismaClient } from "@prisma/client";
@@ -217,9 +218,15 @@ export const generateAccessToken = (user) => {
  * Refresh Token 생성 및 DB 저장 (7일)
  */
 export const generateRefreshToken = async (user) => {
+    // 기존 Refresh Token 정리 (동시 요청 방지)
+    await prisma.refreshToken.deleteMany({
+        where: { userId: user.id },
+    });
+
     const payload = {
         id: user.id,
         type: "refresh",
+        jti: crypto.randomBytes(16).toString("hex"), // 고유 ID로 토큰 충돌 방지
     };
 
     const token = jwt.sign(payload, JWT_REFRESH_SECRET, {
