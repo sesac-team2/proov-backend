@@ -15,9 +15,15 @@ app.use(express.json());
 app.use(cookieParser());
 
 // CORS 설정
+const allowedOrigins = [
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "http://54.236.227.121:5002",
+];
+
 app.use(
     cors({
-        origin: process.env.FRONTEND_URL || "http://localhost:3000",
+        origin: allowedOrigins,
         methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         allowedHeaders: ["Content-Type", "Authorization"],
         credentials: true, // 쿠키 전송 허용
