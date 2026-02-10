@@ -21,6 +21,7 @@ const allowedOrigins = [
     "http://localhost:5002",
     "http://127.0.0.1:5002",
     "http://54.236.227.121:5002",
+    "http://54.236.227.121.nip.io:5002",
 ];
 
 app.use(
