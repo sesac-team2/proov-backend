@@ -28,6 +28,10 @@ const options = {
                 },
             },
         },
+        tags: [
+            { name: "Auth", description: "인증 관련 API" },
+            { name: "Project", description: "프로젝트 관리" },
+        ],
     },
     apis: ["./server/routes/*.js"], // Path to the API docs
 };

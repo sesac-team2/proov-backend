@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import authRoute from "./routes/authRoute.js";
+import projectRoute from "./routes/projectRoute.js";
 import { swaggerUi, specs } from "./config/swagger.js";
 import cors from "cors";
 
@@ -16,7 +17,7 @@ app.use(cookieParser());
 // CORS 설정
 app.use(
     cors({
-        origin: process.env.FRONTEND_URL || "http://localhost:3000",
+        origin: "*",
         methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         allowedHeaders: ["Content-Type", "Authorization"],
         credentials: true, // 쿠키 전송 허용
@@ -29,10 +30,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/auth", authRoute);
-
-app.get("/projects", (req, res) => {
-    res.send("프로젝트 테스트 중...");
-});
+app.use("/projects", projectRoute);
 
 // Swagger Documentation
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
