@@ -1,5 +1,6 @@
 import { Router } from "express";
 import * as projectController from "../controllers/projectController.js";
+import projectMemberRoute from "./projectMemberRoute.js";
 import { authenticate } from "../middlewares/authMiddleware.js";
 
 const router = Router();
@@ -308,5 +309,8 @@ router.put("/:id", authenticate, projectController.updateProject);
  *         description: 프로젝트가 존재하지 않음
  */
 router.delete("/:id", authenticate, projectController.deleteProject);
+
+// Project Member routes (nested)
+router.use("/:id/members", projectMemberRoute);
 
 export default router;
