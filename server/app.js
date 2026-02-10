@@ -17,7 +17,7 @@ app.use(cookieParser());
 // CORS 설정
 app.use(
     cors({
-        origin: "*",
+        origin: process.env.FRONTEND_URL || "http://localhost:3000",
         methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         allowedHeaders: ["Content-Type", "Authorization"],
         credentials: true, // 쿠키 전송 허용
