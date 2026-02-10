@@ -1,13 +1,5 @@
 import * as authService from "../services/authService.js";
 
-// 쿠키 옵션
-const COOKIE_OPTIONS = {
-    httpOnly: true, // JS에서 접근 불가 (XSS 방지)
-    secure: process.env.NODE_ENV === "production", // HTTPS에서만
-    sameSite: "strict", // CSRF 방지
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7일 (밀리초)
-};
-
 /**
  * POST /auth/login
  * OAuth 로그인/회원가입
@@ -39,7 +31,7 @@ export const login = async (req, res) => {
             }
             accessToken = token;
         } else if (provider === "kakao") {
-            // Kakao는 code + redirect_uri -> token 교환 필요
+            // Kakao는 code + redirectUri -> token 교환 필요
             if (!code || !redirectUri) {
                 return res.status(400).json({
                     error: "Bad Request: code and redirectUri are required for Kakao login",
@@ -50,7 +42,7 @@ export const login = async (req, res) => {
                 redirectUri,
             );
         } else if (provider === "github") {
-            // GitHub는 code + redirect_uri -> token 교환 필요
+            // GitHub는 code + redirectUri -> token 교환 필요
             if (!code || !redirectUri) {
                 return res.status(400).json({
                     error: "Bad Request: code and redirectUri are required for GitHub login",
@@ -89,11 +81,9 @@ export const login = async (req, res) => {
         // Refresh Token 생성 및 DB 저장
         const refreshTokenData = await authService.generateRefreshToken(user);
 
-        // Refresh Token을 HttpOnly 쿠키로 설정
-        res.cookie("refresh_token", refreshTokenData.token, COOKIE_OPTIONS);
-
         return res.status(200).json({
             accessToken: accessTokenData.token,
+            refreshToken: refreshTokenData.token,
             expiresIn: accessTokenData.expiresIn,
             user: {
                 id: user.id,
@@ -112,10 +102,11 @@ export const login = async (req, res) => {
 /**
  * POST /auth/refresh
  * Access Token 재발급
+ * - refreshToken을 request body로 받음
  */
 export const refresh = async (req, res) => {
     try {
-        const refreshToken = req.cookies.refresh_token;
+        const { refreshToken } = req.body;
 
         if (!refreshToken) {
             return res.status(401).json({
@@ -128,8 +119,6 @@ export const refresh = async (req, res) => {
         try {
             user = await authService.verifyRefreshToken(refreshToken);
         } catch (error) {
-            // 쿠키 삭제
-            res.clearCookie("refresh_token", COOKIE_OPTIONS);
             return res.status(401).json({
                 error: "Unauthorized: Invalid or expired refresh token",
             });
@@ -145,11 +134,9 @@ export const refresh = async (req, res) => {
         const newRefreshTokenData =
             await authService.generateRefreshToken(user);
 
-        // 새 Refresh Token을 HttpOnly 쿠키로 설정
-        res.cookie("refresh_token", newRefreshTokenData.token, COOKIE_OPTIONS);
-
         return res.status(200).json({
             accessToken: accessTokenData.token,
+            refreshToken: newRefreshTokenData.token,
             expiresIn: accessTokenData.expiresIn,
         });
     } catch (error) {
@@ -161,18 +148,16 @@ export const refresh = async (req, res) => {
 /**
  * POST /auth/logout
  * 로그아웃
+ * - refreshToken을 request body로 받음
  */
 export const logout = async (req, res) => {
     try {
-        const refreshToken = req.cookies.refresh_token;
+        const { refreshToken } = req.body;
 
         if (refreshToken) {
             // DB에서 Refresh Token 삭제
             await authService.deleteRefreshToken(refreshToken);
         }
-
-        // 쿠키 삭제
-        res.clearCookie("refresh_token", COOKIE_OPTIONS);
 
         return res.status(200).json({ message: "로그아웃 되었습니다." });
     } catch (error) {
@@ -262,9 +247,6 @@ export const withdraw = async (req, res) => {
 
         // 유저 삭제 (Cascade로 RefreshToken도 함께 삭제됨)
         await authService.deleteUser(userId);
-
-        // Refresh Token 쿠키 삭제
-        res.clearCookie("refresh_token", COOKIE_OPTIONS);
 
         return res.status(200).json({ message: "성공적으로 탈퇴되었습니다." });
     } catch (error) {
