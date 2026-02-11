@@ -58,6 +58,7 @@ jobs:
                         -e KAKAO_CLIENT_SECRET="${{ secrets.KAKAO_CLIENT_SECRET }}" \
                         -e GITHUB_CLIENT_ID="${{ secrets.GH_CLIENT_ID }}" \
                         -e GITHUB_CLIENT_SECRET="${{ secrets.GH_CLIENT_SECRET }}" \
+                        -e GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}" \
                         ${{ secrets.DOCKER_USERNAME }}/proov-backend:latest
 
                       # 4. DB 테이블 최신화
