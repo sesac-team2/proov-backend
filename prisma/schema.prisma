@@ -14,32 +14,35 @@ datasource db {
 }
 
 model Users {
-    id            String          @id @default(uuid())
-    email         String          @unique
-    fullName      String?         @map("full_name")
-    avatarUrl     String?         @map("avatar_url")
-    bio           String?
-    provider      String          // google | kakao | github
-    createdAt     DateTime        @default(now()) @map("created_at")
-    updatedAt     DateTime        @updatedAt @map("updated_at")
-    projects      Project[]       // 유저가 생성한 프로젝트들
-    memberships   ProjectMember[] // 유저가 참여한 프로젝트 멤버십
-    refreshTokens RefreshToken[]  // 유저의 리프레시 토큰들
+    id                    String          @id @default(uuid())
+    email                 String          @unique
+    fullName              String?         @map("full_name")
+    avatarUrl             String?         @map("avatar_url")
+    bio                   String?
+    provider              String          // google | kakao | github
+    createdAt             DateTime        @default(now()) @map("created_at")
+    updatedAt             DateTime        @updatedAt @map("updated_at")
+    projects              Project[]       // 유저가 생성한 프로젝트들
+    memberships           ProjectMember[] // 유저가 참여한 프로젝트 멤버십
+    refreshTokens         RefreshToken[]  // 유저의 리프레시 토큰들
+    sentTestimonials      Testimonial[]   @relation("sentTestimonials")
+    receivedTestimonials  Testimonial[]   @relation("receivedTestimonials")
 }
 
 model Project {
-    id          String          @id @default(uuid())
-    name        String
-    description String?
-    startDate   DateTime        @map("start_date")
-    endDate     DateTime        @map("end_date")
-    status      String          @default("in_progress") // in_progress | completed
-    creatorId   String          @map("creator_id")
-    createdAt   DateTime        @default(now()) @map("created_at")
-    updatedAt   DateTime        @updatedAt @map("updated_at")
+    id           String          @id @default(uuid())
+    name         String
+    description  String?
+    startDate    DateTime        @map("start_date")
+    endDate      DateTime        @map("end_date")
+    status       String          @default("in_progress") // in_progress | completed
+    creatorId    String          @map("creator_id")
+    createdAt    DateTime        @default(now()) @map("created_at")
+    updatedAt    DateTime        @updatedAt @map("updated_at")
 
-    creator     Users           @relation(fields: [creatorId], references: [id], onDelete: Cascade)
-    members     ProjectMember[]
+    creator      Users           @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+    members      ProjectMember[]
+    testimonials Testimonial[]
 }
 
 model ProjectMember {
@@ -63,4 +66,22 @@ model RefreshToken {
     user      Users    @relation(fields: [userId], references: [id], onDelete: Cascade)
     expiresAt DateTime @map("expires_at")
     createdAt DateTime @default(now()) @map("created_at")
+}
+
+model Testimonial {
+    id          String   @id @default(uuid())
+    projectId   String   @map("project_id")
+    senderId    String   @map("sender_id")
+    recipientId String   @map("recipient_id")
+    content     String   @db.Text
+    summary     String?
+    highlights  String[]
+    skills      String[]
+    status      String   @default("published") // published | hidden
+    createdAt   DateTime @default(now()) @map("created_at")
+    updatedAt   DateTime @updatedAt @map("updated_at")
+
+    project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+    sender    Users   @relation("sentTestimonials", fields: [senderId], references: [id], onDelete: Cascade)
+    recipient Users   @relation("receivedTestimonials", fields: [recipientId], references: [id], onDelete: Cascade)
 }
