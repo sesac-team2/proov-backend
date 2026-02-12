@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import authRoute from "./routes/authRoute.js";
 import projectRoute from "./routes/projectRoute.js";
+import testimonialRoute from "./routes/testimonialRoute.js";
 import publicShareRoute from "./routes/publicShareRoute.js";
 import { swaggerUi, specs } from "./config/swagger.js";
 import cors from "cors";
