@@ -56,6 +56,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/auth", authRoute);
+app.use("/", testimonialRoute);
 app.use("/projects", projectRoute);
 app.use("/share", publicShareRoute);
 
