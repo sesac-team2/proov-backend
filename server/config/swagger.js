@@ -32,7 +32,7 @@ const options = {
             { name: "Auth", description: "인증 관련 API" },
             { name: "Project", description: "프로젝트 관리" },
             { name: "ProjectMember", description: "프로젝트 멤버 관리" },
-            { name: "Testimonial", description: "기여 증언 관리" },
+            { name: "PublicShare", description: "외부 공유 (공개 포트폴리오)" },
         ],
     },
     apis: ["./server/routes/*.js"], // Path to the API docs
