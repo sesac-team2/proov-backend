@@ -153,3 +153,90 @@ export const getMyContributions = async (req, res) => {
         return res.status(500).json({ error: "Internal Server Error" });
     }
 };
+
+/**
+ * PUT /testimonials/:id
+ * 기여 증언 수정
+ */
+export const updateTestimonial = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { id } = req.params;
+        const { content, highlights, skills } = req.body;
+
+        const testimonial = await prisma.testimonial.findUnique({
+            where: { id },
+        });
+
+        if (!testimonial) {
+            return res.status(404).json({ error: "Testimonial not found" });
+        }
+
+        // 증언이 속한 프로젝트 멤버인지 확인 (누구나 수정 요청 가능)
+        const isMember = await testimonialService.isMember(
+            userId,
+            testimonial.projectId,
+        );
+        if (!isMember) {
+            return res
+                .status(403)
+                .json({
+                    error: "Forbidden: You are not a member of this project",
+                });
+        }
+
+        if (content && content.length < 50) {
+            return res.status(400).json({
+                error: "Bad Request: content는 최소 50자 이상이어야 합니다",
+            });
+        }
+
+        const updated = await testimonialService.updateTestimonial(id, {
+            content,
+            highlights,
+            skills,
+        });
+
+        return res.status(200).json(updated);
+    } catch (error) {
+        console.error("UpdateTestimonial error:", error);
+        return res.status(500).json({ error: "Internal Server Error" });
+    }
+};
+
+/**
+ * DELETE /testimonials/:id
+ * 기여 증언 삭제 (admin만)
+ */
+export const deleteTestimonial = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { id } = req.params;
+
+        const testimonial = await prisma.testimonial.findUnique({
+            where: { id },
+        });
+
+        if (!testimonial) {
+            return res.status(404).json({ error: "Testimonial not found" });
+        }
+
+        // admin 확인
+        const isAdmin = await testimonialService.isAdmin(
+            userId,
+            testimonial.projectId,
+        );
+        if (!isAdmin) {
+            return res
+                .status(403)
+                .json({ error: "Forbidden: Admin access required" });
+        }
+
+        await testimonialService.deleteTestimonial(id);
+
+        return res.status(204).send(); // No Content
+    } catch (error) {
+        console.error("DeleteTestimonial error:", error);
+        return res.status(500).json({ error: "Internal Server Error" });
+    }
+};
