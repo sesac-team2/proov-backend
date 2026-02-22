@@ -29,15 +29,34 @@ export const createTestimonial = async ({
     // AI 요약 생성 (실패해도 증언은 저장됨)
     const summary = await aiService.summarizeTestimonial(content);
 
+    // 스킬 이름들을 DB에서 찾거나 없으면 생성하여 ID를 가져옵니다.
+    const skillRecords = await Promise.all(
+        (skills || []).map(async (skillName) => {
+            let skill = await prisma.skill.findFirst({
+                where: { name: skillName },
+            });
+            if (!skill) {
+                skill = await prisma.skill.create({
+                    data: { name: skillName },
+                });
+            }
+            return skill.id;
+        }),
+    );
+
     const testimonial = await prisma.testimonial.create({
         data: {
             projectId,
             senderId,
             recipientId,
             content,
-            summary: summary || null,
-            highlights: highlights || [],
-            skills: skills || [],
+            dateWritten: new Date(),
+            highlights: {
+                create: (highlights || []).map((text) => ({ text })),
+            },
+            skills: {
+                create: skillRecords.map((skillId) => ({ skillId })),
+            },
         },
         include: {
             sender: {
