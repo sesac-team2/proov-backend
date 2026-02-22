@@ -35,10 +35,10 @@ const router = Router();
  *                 user:
  *                   type: object
  *                   properties:
- *                     full_name:
+ *                     fullName:
  *                       type: string
  *                       nullable: true
- *                     avatar_url:
+ *                     avatarUrl:
  *                       type: string
  *                       nullable: true
  *                     bio:
@@ -47,15 +47,15 @@ const router = Router();
  *                 stats:
  *                   type: object
  *                   properties:
- *                     projects_completed:
+ *                     projectsCompleted:
  *                       type: integer
- *                     testimonials_received:
+ *                     testimonialsReceived:
  *                       type: integer
  *                 highlights:
  *                   type: array
  *                   items:
  *                     type: string
- *                 skills_cloud:
+ *                 skillsCloud:
  *                   type: array
  *                   items:
  *                     type: object
@@ -64,17 +64,17 @@ const router = Router();
  *                         type: string
  *                       value:
  *                         type: integer
- *                 featured_testimonials:
+ *                 featuredTestimonials:
  *                   type: array
  *                   items:
  *                     type: object
  *                     properties:
- *                       project_name:
+ *                       projectName:
  *                         type: string
- *                       sender_name:
+ *                       senderName:
  *                         type: string
  *                         nullable: true
- *                       sender_role:
+ *                       senderRole:
  *                         type: string
  *                         nullable: true
  *                       content:
