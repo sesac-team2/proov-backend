@@ -60,7 +60,7 @@ export const createTestimonial = async ({
  */
 export const getTestimonialsByProject = async (projectId) => {
     const testimonials = await prisma.testimonial.findMany({
-        where: { projectId, status: "published" },
+        where: { projectId },
         include: {
             sender: {
                 select: { id: true, fullName: true, avatarUrl: true },
@@ -80,7 +80,7 @@ export const getTestimonialsByProject = async (projectId) => {
  */
 export const getMyContributions = async (userId) => {
     const testimonials = await prisma.testimonial.findMany({
-        where: { recipientId: userId, status: "published" },
+        where: { recipientId: userId },
         include: {
             sender: {
                 select: { id: true, fullName: true, avatarUrl: true },
