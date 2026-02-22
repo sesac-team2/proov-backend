@@ -32,50 +32,55 @@ export const getPublicPortfolio = async (userIdOrHandle) => {
         return null;
     }
 
-    const [projectsCompletedCount, testimonialsReceivedCount, testimonialsForHighlights, testimonialsForSkills, featuredTestimonialsRaw] =
-        await Promise.all([
-            prisma.projectMember.count({
-                where: {
-                    userId: user.id,
-                    project: { status: "completed" },
+    const [
+        projectsCompletedCount,
+        testimonialsReceivedCount,
+        testimonialsForHighlights,
+        testimonialsForSkills,
+        featuredTestimonialsRaw,
+    ] = await Promise.all([
+        prisma.projectMember.count({
+            where: {
+                userId: user.id,
+                project: { status: "completed" },
+            },
+        }),
+        prisma.testimonial.count({
+            where: { recipientId: user.id },
+        }),
+        prisma.testimonial.findMany({
+            where: { recipientId: user.id },
+            select: {
+                dateWritten: true,
+                highlights: { select: { text: true } },
+            },
+        }),
+        prisma.testimonial.findMany({
+            where: { recipientId: user.id },
+            select: {
+                skills: {
+                    select: { skill: { select: { name: true } } },
                 },
-            }),
-            prisma.testimonial.count({
-                where: { recipientId: user.id },
-            }),
-            prisma.testimonial.findMany({
-                where: { recipientId: user.id },
-                select: {
-                    dateWritten: true,
-                    highlights: { select: { text: true } },
-                },
-            }),
-            prisma.testimonial.findMany({
-                where: { recipientId: user.id },
-                select: {
-                    skills: {
-                        select: { skill: { select: { name: true } } },
-                    },
-                },
-            }),
-            prisma.testimonial.findMany({
-                where: { recipientId: user.id },
-                orderBy: { dateWritten: "desc" },
-                take: FEATURED_TESTIMONIALS_LIMIT,
-                select: {
-                    content: true,
-                    dateWritten: true,
-                    project: { select: { name: true } },
-                    sender: { select: { fullName: true } },
-                    senderId: true,
-                    projectId: true,
-                },
-            }),
-        ]);
+            },
+        }),
+        prisma.testimonial.findMany({
+            where: { recipientId: user.id },
+            orderBy: { dateWritten: "desc" },
+            take: FEATURED_TESTIMONIALS_LIMIT,
+            select: {
+                content: true,
+                dateWritten: true,
+                project: { select: { name: true } },
+                sender: { select: { fullName: true } },
+                senderId: true,
+                projectId: true,
+            },
+        }),
+    ]);
 
     const stats = {
-        projects_completed: projectsCompletedCount,
-        testimonials_received: testimonialsReceivedCount,
+        projectsCompleted: projectsCompletedCount,
+        testimonialsReceived: testimonialsReceivedCount,
     };
 
     const textToFreqAndLatest = new Map();
@@ -103,13 +108,10 @@ export const getPublicPortfolio = async (userIdOrHandle) => {
     const skillCounts = new Map();
     for (const t of testimonialsForSkills) {
         for (const { skill } of t.skills) {
-            skillCounts.set(
-                skill.name,
-                (skillCounts.get(skill.name) || 0) + 1,
-            );
+            skillCounts.set(skill.name, (skillCounts.get(skill.name) || 0) + 1);
         }
     }
-    const skills_cloud = [...skillCounts.entries()]
+    const skillsCloud = [...skillCounts.entries()]
         .sort((a, b) => b[1] - a[1])
         .slice(0, SKILLS_CLOUD_LIMIT)
         .map(([text, value]) => ({ text, value }));
@@ -128,23 +130,23 @@ export const getPublicPortfolio = async (userIdOrHandle) => {
         ),
     );
 
-    const featured_testimonials = featuredTestimonialsRaw.map((t, i) => ({
-        project_name: t.project.name,
-        sender_name: t.sender.fullName ?? null,
-        sender_role: senderProjectRoles[i]?.role ?? null,
+    const featuredTestimonials = featuredTestimonialsRaw.map((t, i) => ({
+        projectName: t.project.name,
+        senderName: t.sender.fullName ?? null,
+        senderRole: senderProjectRoles[i]?.role ?? null,
         content: t.content,
         date: t.dateWritten.toISOString().slice(0, 10),
     }));
 
     return {
         user: {
-            full_name: user.fullName ?? null,
-            avatar_url: user.avatarUrl ?? null,
+            fullName: user.fullName ?? null,
+            avatarUrl: user.avatarUrl ?? null,
             bio: user.bio ?? null,
         },
         stats,
         highlights,
-        skills_cloud,
-        featured_testimonials,
+        skillsCloud,
+        featuredTestimonials,
     };
 };
