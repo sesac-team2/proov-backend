@@ -227,6 +227,94 @@ router.post(
 
 /**
  * @swagger
+ * /testimonials/{id}:
+ *   put:
+ *     summary: 기여 증언 수정
+ *     description: |
+ *       작성된 기여 증언을 수정합니다.
+ *       - 해당 프로젝트의 멤버 누구나 수정할 수 있습니다.
+ *       - content가 변경되면 AI가 요약을 다시 생성합니다.
+ *     tags: [Testimonial]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: 수정할 증언의 UUID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               content:
+ *                 type: string
+ *                 minLength: 50
+ *                 description: 수정할 증언 본문 (최소 50자)
+ *               highlights:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: 수정할 핵심 문구들
+ *               skills:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: 수정할 스킬들
+ *     responses:
+ *       200:
+ *         description: 증언 수정 성공
+ *       400:
+ *         description: 잘못된 요청 (content 길이 등)
+ *       403:
+ *         description: 권한 없음 (프로젝트 멤버가 아님)
+ *       404:
+ *         description: 증언을 찾을 수 없음
+ */
+router.put(
+    "/testimonials/:id",
+    authenticate,
+    testimonialController.updateTestimonial,
+);
+
+/**
+ * @swagger
+ * /testimonials/{id}:
+ *   delete:
+ *     summary: 기여 증언 삭제
+ *     description: |
+ *       작성된 기여 증언을 삭제합니다.
+ *       - 해당 프로젝트의 관리자(admin)만 삭제할 수 있습니다.
+ *     tags: [Testimonial]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: 삭제할 증언의 UUID
+ *     responses:
+ *       204:
+ *         description: 증언 삭제 성공 (No Content)
+ *       403:
+ *         description: 권한 없음 (프로젝트 admin이 아님)
+ *       404:
+ *         description: 증언을 찾을 수 없음
+ */
+router.delete(
+    "/testimonials/:id",
+    authenticate,
+    testimonialController.deleteTestimonial,
+);
+
+/**
+ * @swagger
  * /users/me/contributions:
  *   get:
  *     summary: 내 기여 증언 통계
