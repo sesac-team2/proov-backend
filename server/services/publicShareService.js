@@ -83,27 +83,15 @@ export const getPublicPortfolio = async (userIdOrHandle) => {
         testimonialsReceived: testimonialsReceivedCount,
     };
 
-    const textToFreqAndLatest = new Map();
-    for (const t of testimonialsForHighlights) {
-        const d = t.dateWritten.getTime();
-        for (const h of t.highlights) {
-            const cur = textToFreqAndLatest.get(h.text);
-            if (!cur) {
-                textToFreqAndLatest.set(h.text, { freq: 1, latest: d });
-            } else {
-                cur.freq += 1;
-                if (d > cur.latest) cur.latest = d;
+    const portfolioProjects = [];
+
+    for (const project of userProjects) {
+        let isCollaboratorAdded = false;
+        for (const m of project.members) {
+            if (m.userId !== user.id) {
+                collaboratorIds.add(m.userId);
             }
         }
-    }
-    const highlights = [...textToFreqAndLatest.entries()]
-        .sort((a, b) => {
-            const [textA, dataA] = a;
-            const [textB, dataB] = b;
-            if (dataB.freq !== dataA.freq) return dataB.freq - dataA.freq;
-            return dataB.latest - dataA.latest;
-        })
-        .map(([text]) => text);
 
     const skillCounts = new Map();
     for (const t of testimonialsForSkills) {
@@ -116,19 +104,14 @@ export const getPublicPortfolio = async (userIdOrHandle) => {
         .slice(0, SKILLS_CLOUD_LIMIT)
         .map(([text, value]) => ({ text, value }));
 
-    const senderProjectRoles = await Promise.all(
-        featuredTestimonialsRaw.map((t) =>
-            prisma.projectMember.findUnique({
-                where: {
-                    userId_projectId: {
-                        userId: t.senderId,
-                        projectId: t.projectId,
-                    },
-                },
-                select: { role: true },
-            }),
-        ),
-    );
+        portfolioProjects.push({
+            id: project.id,
+            name: project.name,
+            testimonialHighlights: projectHighlights,
+            keywords: Array.from(projectKeywords),
+            date: project.endDate.toISOString().slice(0, 10),
+        });
+    }
 
     const featuredTestimonials = featuredTestimonialsRaw.map((t, i) => ({
         projectName: t.project.name,

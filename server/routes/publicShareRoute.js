@@ -40,10 +40,8 @@ const router = Router();
  *                       nullable: true
  *                     avatarUrl:
  *                       type: string
- *                       nullable: true
  *                     bio:
  *                       type: string
- *                       nullable: true
  *                 stats:
  *                   type: object
  *                   properties:
@@ -51,7 +49,9 @@ const router = Router();
  *                       type: integer
  *                     testimonialsReceived:
  *                       type: integer
- *                 highlights:
+ *                     collaboratorsCount:
+ *                       type: integer
+ *                 topKeywords:
  *                   type: array
  *                   items:
  *                     type: string
@@ -76,9 +76,16 @@ const router = Router();
  *                         nullable: true
  *                       senderRole:
  *                         type: string
- *                         nullable: true
- *                       content:
+ *                       name:
  *                         type: string
+ *                       testimonialHighlights:
+ *                         type: array
+ *                         items:
+ *                           type: string
+ *                       keywords:
+ *                         type: array
+ *                         items:
+ *                           type: string
  *                       date:
  *                         type: string
  *                         format: date
