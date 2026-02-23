@@ -32,119 +32,85 @@ export const getPublicPortfolio = async (userIdOrHandle) => {
         return null;
     }
 
-    const [projectsCompletedCount, testimonialsReceivedCount, testimonialsForHighlights, testimonialsForSkills, featuredTestimonialsRaw] =
-        await Promise.all([
-            prisma.projectMember.count({
-                where: {
-                    userId: user.id,
-                    project: { status: "completed" },
-                },
-            }),
-            prisma.testimonial.count({
+    const userProjects = await prisma.project.findMany({
+        where: {
+            members: { some: { userId: user.id } },
+        },
+        include: {
+            members: { select: { userId: true } },
+            testimonials: {
                 where: { recipientId: user.id },
-            }),
-            prisma.testimonial.findMany({
-                where: { recipientId: user.id },
-                select: {
-                    dateWritten: true,
-                    highlights: { select: { text: true } },
+                include: {
+                    highlights: true,
+                    skills: { include: { skill: true } },
                 },
-            }),
-            prisma.testimonial.findMany({
-                where: { recipientId: user.id },
-                select: {
-                    skills: {
-                        select: { skill: { select: { name: true } } },
-                    },
-                },
-            }),
-            prisma.testimonial.findMany({
-                where: { recipientId: user.id },
-                orderBy: { dateWritten: "desc" },
-                take: FEATURED_TESTIMONIALS_LIMIT,
-                select: {
-                    content: true,
-                    dateWritten: true,
-                    project: { select: { name: true } },
-                    sender: { select: { fullName: true } },
-                    senderId: true,
-                    projectId: true,
-                },
-            }),
-        ]);
+            },
+        },
+        orderBy: { endDate: "desc" },
+    });
 
-    const stats = {
-        projects_completed: projectsCompletedCount,
-        testimonials_received: testimonialsReceivedCount,
-    };
-
-    const textToFreqAndLatest = new Map();
-    for (const t of testimonialsForHighlights) {
-        const d = t.dateWritten.getTime();
-        for (const h of t.highlights) {
-            const cur = textToFreqAndLatest.get(h.text);
-            if (!cur) {
-                textToFreqAndLatest.set(h.text, { freq: 1, latest: d });
-            } else {
-                cur.freq += 1;
-                if (d > cur.latest) cur.latest = d;
-            }
-        }
-    }
-    const highlights = [...textToFreqAndLatest.entries()]
-        .sort((a, b) => {
-            const [textA, dataA] = a;
-            const [textB, dataB] = b;
-            if (dataB.freq !== dataA.freq) return dataB.freq - dataA.freq;
-            return dataB.latest - dataA.latest;
-        })
-        .map(([text]) => text);
-
-    const skillCounts = new Map();
-    for (const t of testimonialsForSkills) {
-        for (const { skill } of t.skills) {
-            skillCounts.set(
-                skill.name,
-                (skillCounts.get(skill.name) || 0) + 1,
-            );
-        }
-    }
-    const skills_cloud = [...skillCounts.entries()]
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, SKILLS_CLOUD_LIMIT)
-        .map(([text, value]) => ({ text, value }));
-
-    const senderProjectRoles = await Promise.all(
-        featuredTestimonialsRaw.map((t) =>
-            prisma.projectMember.findUnique({
-                where: {
-                    userId_projectId: {
-                        userId: t.senderId,
-                        projectId: t.projectId,
-                    },
-                },
-                select: { role: true },
-            }),
-        ),
+    const completedProjects = userProjects.filter(
+        (p) => p.status === "completed",
     );
 
-    const featured_testimonials = featuredTestimonialsRaw.map((t, i) => ({
-        project_name: t.project.name,
-        sender_name: t.sender.fullName ?? null,
-        sender_role: senderProjectRoles[i]?.role ?? null,
-        content: t.content,
-        date: t.dateWritten.toISOString().slice(0, 10),
-    }));
+    const projectsCompletedCount = completedProjects.length;
+    let testimonialsReceivedCount = 0;
+    const collaboratorIds = new Set();
+    const allKeywordsCount = new Map();
+
+    const portfolioProjects = [];
+
+    for (const project of userProjects) {
+        let isCollaboratorAdded = false;
+        for (const m of project.members) {
+            if (m.userId !== user.id) {
+                collaboratorIds.add(m.userId);
+            }
+        }
+
+        const projectHighlights = [];
+        const projectKeywords = new Set();
+
+        for (const t of project.testimonials) {
+            testimonialsReceivedCount++;
+            for (const h of t.highlights) {
+                projectHighlights.push(h.text);
+            }
+            for (const ts of t.skills) {
+                projectKeywords.add(ts.skill.name);
+                allKeywordsCount.set(
+                    ts.skill.name,
+                    (allKeywordsCount.get(ts.skill.name) || 0) + 1,
+                );
+            }
+        }
+
+        portfolioProjects.push({
+            id: project.id,
+            name: project.name,
+            testimonialHighlights: projectHighlights,
+            keywords: Array.from(projectKeywords),
+            date: project.endDate.toISOString().slice(0, 10),
+        });
+    }
+
+    const topKeywords = Array.from(allKeywordsCount.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10)
+        .map((e) => e[0]);
 
     return {
         user: {
-            full_name: user.fullName ?? null,
-            avatar_url: user.avatarUrl ?? null,
-            bio: user.bio ?? null,
+            fullName: user.fullName || "",
+            avatarUrl: user.avatarUrl || "",
+            bio: user.bio || "",
         },
-        stats,
-        highlights,
-        skills_cloud,
-        featured_testimonials,
+        stats: {
+            projectsCompletedCount,
+            testimonialsReceivedCount,
+            collaboratorsCount: collaboratorIds.size,
+        },
+        topKeywords,
+        projects: portfolioProjects,
     };
 };

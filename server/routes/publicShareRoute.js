@@ -35,50 +35,42 @@ const router = Router();
  *                 user:
  *                   type: object
  *                   properties:
- *                     full_name:
+ *                     fullName:
  *                       type: string
- *                       nullable: true
- *                     avatar_url:
+ *                     avatarUrl:
  *                       type: string
- *                       nullable: true
  *                     bio:
  *                       type: string
- *                       nullable: true
  *                 stats:
  *                   type: object
  *                   properties:
- *                     projects_completed:
+ *                     projectsCompletedCount:
  *                       type: integer
- *                     testimonials_received:
+ *                     testimonialsReceivedCount:
  *                       type: integer
- *                 highlights:
+ *                     collaboratorsCount:
+ *                       type: integer
+ *                 topKeywords:
  *                   type: array
  *                   items:
  *                     type: string
- *                 skills_cloud:
+ *                 projects:
  *                   type: array
  *                   items:
  *                     type: object
  *                     properties:
- *                       text:
+ *                       id:
  *                         type: string
- *                       value:
- *                         type: integer
- *                 featured_testimonials:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       project_name:
+ *                       name:
  *                         type: string
- *                       sender_name:
- *                         type: string
- *                         nullable: true
- *                       sender_role:
- *                         type: string
- *                         nullable: true
- *                       content:
- *                         type: string
+ *                       testimonialHighlights:
+ *                         type: array
+ *                         items:
+ *                           type: string
+ *                       keywords:
+ *                         type: array
+ *                         items:
+ *                           type: string
  *                       date:
  *                         type: string
  *                         format: date
