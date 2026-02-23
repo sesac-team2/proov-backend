@@ -68,15 +68,15 @@ export const summarizeTestimonial = async (content) => {
     try {
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-        const prompt = `아래 기여 증언 본문을 1~2문장으로 핵심만 요약해주세요.
+        const prompt = `아래 기여 증언 본문을 딱 1줄로 짧게 요약해주세요.
 
 본문:
 ${content}
 
 규칙:
 - 한국어로 요약해주세요.
-- 요약문만 반환해주세요 (인용부호, 마크다운 없이).
-- 핵심 기여 내용과 강점을 중심으로 요약해주세요.`;
+- 무조건 1문장(1줄)으로만 반환해주세요 (마침표 포함, 인용부호나 마크다운 없이).
+- 핵심 내용만 간결하게 설명해주세요.`;
 
         const result = await model.generateContent(prompt);
         const summary = result.response.text().trim();

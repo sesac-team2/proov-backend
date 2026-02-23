@@ -50,6 +50,7 @@ export const createTestimonial = async ({
             senderId,
             recipientId,
             content,
+            summary: summary || null,
             dateWritten: new Date(),
             highlights: {
                 create: (highlights || []).map((text) => ({ text })),
@@ -87,11 +88,42 @@ export const getTestimonialsByProject = async (projectId) => {
             recipient: {
                 select: { id: true, fullName: true, avatarUrl: true },
             },
+            skills: {
+                include: { skill: true },
+            },
+            highlights: true,
         },
         orderBy: { createdAt: "desc" },
     });
 
-    return testimonials;
+    return Promise.all(
+        testimonials.map(async (t) => {
+            let summary = t.summary;
+            if (!summary) {
+                summary = await aiService.summarizeTestimonial(t.content);
+                if (summary) {
+                    // 백그라운드에서 DB 업데이트 (await 안함)
+                    prisma.testimonial
+                        .update({
+                            where: { id: t.id },
+                            data: { summary },
+                        })
+                        .catch((err) =>
+                            console.error(
+                                "Failed to update summary cache",
+                                err,
+                            ),
+                        );
+                }
+            }
+            return {
+                ...t,
+                summary,
+                skills: t.skills.map((s) => s.skill.name),
+                highlights: t.highlights.map((h) => h.text),
+            };
+        }),
+    );
 };
 
 /**
@@ -174,6 +206,8 @@ export const updateTestimonial = async (
     // 내용이 변경된 경우
     if (content && content !== existing.content) {
         dataToUpdate.content = content;
+        const summary = await aiService.summarizeTestimonial(content);
+        dataToUpdate.summary = summary || null;
     }
 
     // 트랜잭션으로 처리 (연관 데이터 삭제 후 재생성 및 본문 업데이트)
