@@ -29,15 +29,34 @@ export const createTestimonial = async ({
     // AI 요약 생성 (실패해도 증언은 저장됨)
     const summary = await aiService.summarizeTestimonial(content);
 
+    // 스킬 이름들을 DB에서 찾거나 없으면 생성하여 ID를 가져옵니다.
+    const skillRecords = await Promise.all(
+        (skills || []).map(async (skillName) => {
+            let skill = await prisma.skill.findFirst({
+                where: { name: skillName },
+            });
+            if (!skill) {
+                skill = await prisma.skill.create({
+                    data: { name: skillName },
+                });
+            }
+            return skill.id;
+        }),
+    );
+
     const testimonial = await prisma.testimonial.create({
         data: {
             projectId,
             senderId,
             recipientId,
             content,
-            summary: summary || null,
-            highlights: highlights || [],
-            skills: skills || [],
+            dateWritten: new Date(),
+            highlights: {
+                create: (highlights || []).map((text) => ({ text })),
+            },
+            skills: {
+                create: skillRecords.map((skillId) => ({ skillId })),
+            },
         },
         include: {
             sender: {
@@ -60,7 +79,7 @@ export const createTestimonial = async ({
  */
 export const getTestimonialsByProject = async (projectId) => {
     const testimonials = await prisma.testimonial.findMany({
-        where: { projectId, status: "published" },
+        where: { projectId },
         include: {
             sender: {
                 select: { id: true, fullName: true, avatarUrl: true },
@@ -80,7 +99,7 @@ export const getTestimonialsByProject = async (projectId) => {
  */
 export const getMyContributions = async (userId) => {
     const testimonials = await prisma.testimonial.findMany({
-        where: { recipientId: userId, status: "published" },
+        where: { recipientId: userId },
         include: {
             sender: {
                 select: { id: true, fullName: true, avatarUrl: true },
@@ -125,4 +144,99 @@ export const getMyContributions = async (userId) => {
         topSkills,
         recentTestimonials,
     };
+};
+
+/**
+ * 프로젝트 관리자 여부 확인
+ */
+export const isAdmin = async (userId, projectId) => {
+    const member = await prisma.projectMember.findUnique({
+        where: {
+            userId_projectId: { userId, projectId },
+        },
+    });
+    return member?.role === "admin";
+};
+
+/**
+ * 증언 수정
+ */
+export const updateTestimonial = async (
+    id,
+    { content, highlights, skills },
+) => {
+    // 1. 기존 증언 조회
+    const existing = await prisma.testimonial.findUnique({ where: { id } });
+    if (!existing) throw new Error("Testimonial not found");
+
+    const dataToUpdate = {};
+
+    // 내용이 변경된 경우
+    if (content && content !== existing.content) {
+        dataToUpdate.content = content;
+    }
+
+    // 트랜잭션으로 처리 (연관 데이터 삭제 후 재생성 및 본문 업데이트)
+    const result = await prisma.$transaction(async (tx) => {
+        // 하이라이트 제공 시 기존 삭제 후 생성
+        if (highlights) {
+            await tx.testimonialHighlight.deleteMany({
+                where: { testimonialId: id },
+            });
+            dataToUpdate.highlights = {
+                create: highlights.map((text) => ({ text })),
+            };
+        }
+
+        // 스킬 제공 시 기존 삭제 후 생성
+        if (skills) {
+            await tx.testimonialSkill.deleteMany({
+                where: { testimonialId: id },
+            });
+
+            // 새 스킬 조회/생성
+            const skillRecords = await Promise.all(
+                skills.map(async (skillName) => {
+                    let skill = await tx.skill.findFirst({
+                        where: { name: skillName },
+                    });
+                    if (!skill) {
+                        skill = await tx.skill.create({
+                            data: { name: skillName },
+                        });
+                    }
+                    return skill.id;
+                }),
+            );
+
+            dataToUpdate.skills = {
+                create: skillRecords.map((skillId) => ({ skillId })),
+            };
+        }
+
+        return await tx.testimonial.update({
+            where: { id },
+            data: dataToUpdate,
+            include: {
+                sender: {
+                    select: { id: true, fullName: true, avatarUrl: true },
+                },
+                recipient: {
+                    select: { id: true, fullName: true, avatarUrl: true },
+                },
+                project: { select: { id: true, name: true } },
+            },
+        });
+    });
+
+    return result;
+};
+
+/**
+ * 증언 삭제
+ */
+export const deleteTestimonial = async (id) => {
+    return await prisma.testimonial.delete({
+        where: { id },
+    });
 };

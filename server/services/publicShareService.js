@@ -32,31 +32,56 @@ export const getPublicPortfolio = async (userIdOrHandle) => {
         return null;
     }
 
-    const userProjects = await prisma.project.findMany({
-        where: {
-            members: { some: { userId: user.id } },
-        },
-        include: {
-            members: { select: { userId: true } },
-            testimonials: {
-                where: { recipientId: user.id },
-                include: {
-                    highlights: true,
-                    skills: { include: { skill: true } },
+    const [
+        projectsCompletedCount,
+        testimonialsReceivedCount,
+        testimonialsForHighlights,
+        testimonialsForSkills,
+        featuredTestimonialsRaw,
+    ] = await Promise.all([
+        prisma.projectMember.count({
+            where: {
+                userId: user.id,
+                project: { status: "completed" },
+            },
+        }),
+        prisma.testimonial.count({
+            where: { recipientId: user.id },
+        }),
+        prisma.testimonial.findMany({
+            where: { recipientId: user.id },
+            select: {
+                dateWritten: true,
+                highlights: { select: { text: true } },
+            },
+        }),
+        prisma.testimonial.findMany({
+            where: { recipientId: user.id },
+            select: {
+                skills: {
+                    select: { skill: { select: { name: true } } },
                 },
             },
-        },
-        orderBy: { endDate: "desc" },
-    });
+        }),
+        prisma.testimonial.findMany({
+            where: { recipientId: user.id },
+            orderBy: { dateWritten: "desc" },
+            take: FEATURED_TESTIMONIALS_LIMIT,
+            select: {
+                content: true,
+                dateWritten: true,
+                project: { select: { name: true } },
+                sender: { select: { fullName: true } },
+                senderId: true,
+                projectId: true,
+            },
+        }),
+    ]);
 
-    const completedProjects = userProjects.filter(
-        (p) => p.status === "completed",
-    );
-
-    const projectsCompletedCount = completedProjects.length;
-    let testimonialsReceivedCount = 0;
-    const collaboratorIds = new Set();
-    const allKeywordsCount = new Map();
+    const stats = {
+        projectsCompleted: projectsCompletedCount,
+        testimonialsReceived: testimonialsReceivedCount,
+    };
 
     const portfolioProjects = [];
 
@@ -68,22 +93,16 @@ export const getPublicPortfolio = async (userIdOrHandle) => {
             }
         }
 
-        const projectHighlights = [];
-        const projectKeywords = new Set();
-
-        for (const t of project.testimonials) {
-            testimonialsReceivedCount++;
-            for (const h of t.highlights) {
-                projectHighlights.push(h.text);
-            }
-            for (const ts of t.skills) {
-                projectKeywords.add(ts.skill.name);
-                allKeywordsCount.set(
-                    ts.skill.name,
-                    (allKeywordsCount.get(ts.skill.name) || 0) + 1,
-                );
-            }
+    const skillCounts = new Map();
+    for (const t of testimonialsForSkills) {
+        for (const { skill } of t.skills) {
+            skillCounts.set(skill.name, (skillCounts.get(skill.name) || 0) + 1);
         }
+    }
+    const skillsCloud = [...skillCounts.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, SKILLS_CLOUD_LIMIT)
+        .map(([text, value]) => ({ text, value }));
 
         portfolioProjects.push({
             id: project.id,
@@ -94,23 +113,23 @@ export const getPublicPortfolio = async (userIdOrHandle) => {
         });
     }
 
-    const topKeywords = Array.from(allKeywordsCount.entries())
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 10)
-        .map((e) => e[0]);
+    const featuredTestimonials = featuredTestimonialsRaw.map((t, i) => ({
+        projectName: t.project.name,
+        senderName: t.sender.fullName ?? null,
+        senderRole: senderProjectRoles[i]?.role ?? null,
+        content: t.content,
+        date: t.dateWritten.toISOString().slice(0, 10),
+    }));
 
     return {
         user: {
-            fullName: user.fullName || "",
-            avatarUrl: user.avatarUrl || "",
-            bio: user.bio || "",
+            fullName: user.fullName ?? null,
+            avatarUrl: user.avatarUrl ?? null,
+            bio: user.bio ?? null,
         },
-        stats: {
-            projectsCompletedCount,
-            testimonialsReceivedCount,
-            collaboratorsCount: collaboratorIds.size,
-        },
-        topKeywords,
-        projects: portfolioProjects,
+        stats,
+        highlights,
+        skillsCloud,
+        featuredTestimonials,
     };
 };

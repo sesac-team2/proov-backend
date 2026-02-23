@@ -37,6 +37,7 @@ const router = Router();
  *                   properties:
  *                     fullName:
  *                       type: string
+ *                       nullable: true
  *                     avatarUrl:
  *                       type: string
  *                     bio:
@@ -44,9 +45,9 @@ const router = Router();
  *                 stats:
  *                   type: object
  *                   properties:
- *                     projectsCompletedCount:
+ *                     projectsCompleted:
  *                       type: integer
- *                     testimonialsReceivedCount:
+ *                     testimonialsReceived:
  *                       type: integer
  *                     collaboratorsCount:
  *                       type: integer
@@ -54,12 +55,26 @@ const router = Router();
  *                   type: array
  *                   items:
  *                     type: string
- *                 projects:
+ *                 skillsCloud:
  *                   type: array
  *                   items:
  *                     type: object
  *                     properties:
- *                       id:
+ *                       text:
+ *                         type: string
+ *                       value:
+ *                         type: integer
+ *                 featuredTestimonials:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       projectName:
+ *                         type: string
+ *                       senderName:
+ *                         type: string
+ *                         nullable: true
+ *                       senderRole:
  *                         type: string
  *                       name:
  *                         type: string
