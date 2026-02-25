@@ -26,12 +26,18 @@ export const createTestimonial = async ({
     highlights,
     skills,
 }) => {
-    // AI 요약 생성 (실패해도 증언은 저장됨)
-    const summary = await aiService.summarizeTestimonial(content);
+    // AI 요약 및 스킬 추출 (실패해도 증언은 저장되거나 빈 값으로 들어감)
+    const [summary, extractedSkills] = await Promise.all([
+        aiService.summarizeTestimonial(content),
+        aiService.generateSkillsFromTestimonial(content, highlights),
+    ]);
+
+    // 클라이언트가 명시적으로 스킬을 보내지 않았을 시 AI가 추출한 스킬로 대체
+    const activeSkills = skills && skills.length > 0 ? skills : extractedSkills;
 
     // 스킬 이름들을 DB에서 찾거나 없으면 생성하여 ID를 가져옵니다.
     const skillRecords = await Promise.all(
-        (skills || []).map(async (skillName) => {
+        (activeSkills || []).map(async (skillName) => {
             let skill = await prisma.skill.findFirst({
                 where: { name: skillName },
             });
