@@ -142,6 +142,7 @@ router.get(
  *       - 둘 모두 해당 프로젝트의 멤버여야 합니다.
  *       - content는 최소 50자 이상이어야 합니다.
  *       - 저장 시 AI가 자동으로 요약본(summary)을 생성합니다.
+ *       - skills를 생략하거나 빈 배열로 보내면 AI가 자동으로 5개의 스킬을 추출하여 저장합니다.
  *     tags: [Testimonial]
  *     security:
  *       - bearerAuth: []
