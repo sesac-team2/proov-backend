@@ -83,4 +83,34 @@ const router = Router({ mergeParams: true });
  */
 router.post("/", authenticate, projectMemberController.inviteMember);
 
+/**
+ * @swagger
+ * /projects/{id}/members/leave:
+ *   delete:
+ *     summary: 프로젝트 나가기
+ *     description: |
+ *       현재 로그인한 사용자가 프로젝트에서 스스로 나갑니다.
+ *       - 단, 프로젝트의 유일한 관리자(admin)인 경우 나갈 수 없습니다. (다른 관리자를 지정하거나 프로젝트를 삭제해야 함)
+ *     tags: [ProjectMember]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Project UUID
+ *     responses:
+ *       204:
+ *         description: 프로젝트 탈퇴 성공 (No Content)
+ *       403:
+ *         description: |
+ *           - 프로젝트의 멤버가 아님
+ *           - 유일한 관리자는 탈퇴 불가
+ *       404:
+ *         description: 프로젝트 없음
+ */
+router.delete("/leave", authenticate, projectMemberController.leaveProject);
+
 export default router;
