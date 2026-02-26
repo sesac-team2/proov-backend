@@ -5,7 +5,11 @@ const prisma = new PrismaClient();
 /**
  * 프로젝트 멤버 초대 (admin만)
  */
-export const inviteMember = async (projectId, inviterUserId, { email, role }) => {
+export const inviteMember = async (
+    projectId,
+    inviterUserId,
+    { email, role },
+) => {
     // 1. 프로젝트 존재 여부 확인
     const project = await prisma.project.findUnique({
         where: { id: projectId },
@@ -68,4 +72,43 @@ export const inviteMember = async (projectId, inviterUserId, { email, role }) =>
         role: member.role,
         status: member.status,
     };
+};
+
+/**
+ * 프로젝트 나가기
+ */
+export const leaveProject = async (projectId, userId) => {
+    // 1. 멤버십 존재 확인
+    const membership = await prisma.projectMember.findUnique({
+        where: {
+            userId_projectId: { userId, projectId },
+        },
+    });
+
+    if (!membership) {
+        return { error: "NOT_MEMBER" };
+    }
+
+    // 2. 만약 유일한 admin이라면 나갈 수 없음 (다른 유저가 admin인 경우만 허용하거나 프로젝트 삭제 유도)
+    if (membership.role === "admin") {
+        const adminCount = await prisma.projectMember.count({
+            where: {
+                projectId,
+                role: "admin",
+            },
+        });
+
+        if (adminCount <= 1) {
+            return { error: "SOLE_ADMIN" };
+        }
+    }
+
+    // 3. 프로젝트 멤버 삭제
+    await prisma.projectMember.delete({
+        where: {
+            userId_projectId: { userId, projectId },
+        },
+    });
+
+    return { success: true };
 };
